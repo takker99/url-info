@@ -4,6 +4,10 @@ import { DOMParser } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
 interface URLInfoResponse {
   url: string;
   title?: string;
+  fragment?: {
+    hash: string;
+    content?: string;
+  };
   ogps?: {
     property?: string;
     content?: string;
@@ -18,6 +22,7 @@ export default async (req: ServerRequest) => {
   const url = new URL(req.url, base);
   const params = url.searchParams;
   const targetURL = params.get("url");
+  const hash = params.get("hash") ?? undefined;
 
   if (!targetURL) {
     respondJSON({ error: "No URL was found." }, req);
@@ -35,6 +40,17 @@ export default async (req: ServerRequest) => {
     const doc = new DOMParser().parseFromString(html, "text/html");
     // titleを取得する
     result.title = doc?.getElementsByTagName("title")?.[0]?.textContent;
+
+    // URL fragmentに対応する要素の中身を取得する
+    if (hash) {
+      result.fragment = {
+        hash: `#${hash}`,
+        content:
+          doc?.getElementById(hash)?.textContent ??
+          //なかったらname属性を探す
+          doc?.querySelector(`[name="${hash}"]`)?.textContent,
+      };
+    }
 
     // OGPを取得する
     result.ogps = doc?.getElementsByTagName("meta").map((meta) => {
