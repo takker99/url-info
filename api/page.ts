@@ -37,7 +37,7 @@ export default async (req: ServerRequest) => {
   console.log(`Fetching HTML from ${targetURL}...`);
   try {
     const res = await fetch(targetURL);
-    console.log("Success! response: %o", res);
+    console.log("Success! response: ", res);
     const html = await res.text();
     const doc = new DOMParser().parseFromString(html, "text/html");
     // titleを取得する
