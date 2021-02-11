@@ -9,9 +9,9 @@ interface URLInfoResponse {
     content?: string;
   };
   ogps?: {
-    property?: string;
-    content?: string;
+    [key: string]: string;
   }[];
+  encoding: string;
 }
 
 export default async (req: ServerRequest) => {
@@ -31,7 +31,7 @@ export default async (req: ServerRequest) => {
     return;
   }
   // jsonにして返す
-  let result: URLInfoResponse = { url: targetURL };
+  let result: URLInfoResponse = { url: targetURL, encoding: "utf-8" };
 
   // html textをfetchする
   console.log(`Fetching HTML from ${targetURL}...`);
@@ -47,8 +47,7 @@ export default async (req: ServerRequest) => {
     if (hash) {
       result.fragment = {
         hash: `#${hash}`,
-        content:
-          doc?.getElementById(hash)?.textContent ??
+        content: doc?.getElementById(hash)?.textContent ??
           //なかったらname属性を探す
           doc?.querySelector(`[name="${hash}"]`)?.textContent,
       };
@@ -56,14 +55,21 @@ export default async (req: ServerRequest) => {
 
     // OGPを取得する
     result.ogps = doc?.getElementsByTagName("meta").map((meta) => {
-      return {
-        property:
-          meta.getAttribute("name") ??
-          meta.getAttribute("property") ??
-          undefined,
-        content: meta.getAttribute("content") ?? undefined,
-      };
+      let result: { [key: string]: string } = {};
+      for (const [name, value] of Object.entries(meta.attributes)) {
+        result[name] = value;
+      }
+      return result;
     });
+
+    // encode情報を取得する
+    result.encoding = result.ogps?.find((attr) =>
+      attr["charset"] !== undefined
+    )?.["charset"] ??
+      result.ogps?.find((attr) => attr["http-equiv"] === "content-type")
+        ?.["content"].split(";").find((text) => /charset=\w+$/.test(text))
+        ?.replace(/charset=(\w+)$/, "$1") ??
+      "utf-8";
 
     console.log("Return this json: %o", result);
     respondJSON(result, req);
