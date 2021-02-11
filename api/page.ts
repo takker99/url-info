@@ -16,9 +16,11 @@ interface URLInfoResponse {
 
 export default async (req: ServerRequest) => {
   // 引数を受け取る
-  const base = `${req.headers.get("x-forwarded-proto")}://${req.headers.get(
-    "x-forwarded-host"
-  )}`;
+  const base = `${req.headers.get("x-forwarded-proto")}://${
+    req.headers.get(
+      "x-forwarded-host",
+    )
+  }`;
   const url = new URL(req.url, base);
   const params = url.searchParams;
   const targetURL = params.get("url");
