@@ -72,7 +72,7 @@ export default async (req: ServerRequest) => {
 
 function respondJSON<T extends {}>(json: T, req: ServerRequest) {
   const headers = new Headers();
-  headers.set("Content-Type", "application/json; charset=utf8");
+  headers.set("Content-Type", "application/json; charset=utf-8");
   req.respond({
     headers,
     body: JSON.stringify(json, null, 2),
